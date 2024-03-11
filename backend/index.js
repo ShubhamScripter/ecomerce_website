@@ -33,7 +33,7 @@ const mystorage=multer.diskStorage({
 
 const upload=multer({storage:mystorage});
 
-app.post('/upload',upload.single('product32'),(req,res)=>
+app.post('/upload',upload.single('product'),(req,res)=>
 {
     // take information of uploaded file console.log(req.file);
     res.json({
@@ -69,9 +69,11 @@ app.post('/addproduct',async(req,res)=>
                     old_price:req.body.old_price,
                 });
 
-    console.log("product save");
+    
     
     await product.save();
+    
+    console.log("product save");
 
     res.json({success:1,"mynew product":product});
   
@@ -87,6 +89,7 @@ app.post('/removeproduct',async(req,res)=>
 //getting all products
 app.get('/allproducts',async(req,res)=>
 {
+    
     const products=await Product.find({});
     console.log("all products got succesfully from database ");
     res.send(products);
