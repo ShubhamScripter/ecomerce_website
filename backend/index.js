@@ -7,8 +7,10 @@ const cors=require('cors');
 const app=express();
 app.use(express.json());
 app.use(cors());
-const Product=require('./Schema/ProductSchema')
+const Product=require('./Schema/ProductSchema');
+const User=require('./Schema/UserSchema');
 const password = encodeURIComponent("Shubham@860"); // i am encoding mogodb atlas password because my password has special charcters like "@"
+const jwt=require('jsonwebtoken');
 
 mongoose.connect(`mongodb+srv://shubhamgoyal20243:${password}@cluster0.y1zyrhs.mongodb.net/e-commerce`)
 .then(()=>{console.log('database is succesfully connected');})
@@ -94,6 +96,76 @@ app.get('/allproducts',async(req,res)=>
     console.log("all products got succesfully from database ");
     res.send(products);
 
+})
+
+
+
+//creating app for registering the user
+app.post('/signup',async(req,res)=>
+{
+    const check=await User.findOne({email:req.body.email});
+    if(check)
+    {
+        return res.json({success:false,errors:"user already existing with same email"});
+    }
+    let cart={};
+    for(let i=0;i<300;i++)
+    cart[i]=0;
+
+    const user=new User({
+        name:req.body.username,
+        email:req.body.email,
+        password:req.body.password,
+        cartData:cart
+    })
+
+    await user.save();
+
+    const data={
+        user:
+        {
+            id:user.id
+        }
+    }
+
+    const token=jwt.sign(data,'secret_ecom');
+
+    res.json({success:true,token});
+
+    
+})
+
+//creating app for registering the user
+app.post('/login',async(req,res)=>
+{
+    const user=await User.findOne({email:req.body.email});
+    if(user)
+    {
+        if(req.body.password==user.password)
+        {
+            const data={
+                user:
+                {
+                    id:user.id
+                }
+            }
+            const token=jwt.sign(data,'secret_ecom');
+            res.json({success:true,token,msg:"login succesfully"});
+        }
+        else
+
+        return res.json({success:false,errors:"Wrong password"});
+    }
+   else
+   {
+    return res.json({success:false,errors:"email not found"});
+   }
+
+    
+
+   
+
+    
 })
 
 
