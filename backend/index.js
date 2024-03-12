@@ -91,11 +91,10 @@ app.post('/removeproduct',async(req,res)=>
 //getting all products
 app.get('/allproducts',async(req,res)=>
 {
-    
-    const products=await Product.find({});
     console.log("all products got succesfully from database ");
+    const products=await Product.find({});
+    console.log(products);
     res.send(products);
-
 })
 
 
@@ -113,7 +112,7 @@ app.post('/signup',async(req,res)=>
     cart[i]=0;
 
     const user=new User({
-        name:req.body.username,
+        username:req.body.username,
         email:req.body.email,
         password:req.body.password,
         cartData:cart
@@ -160,15 +159,76 @@ app.post('/login',async(req,res)=>
    {
     return res.json({success:false,errors:"email not found"});
    }
-
-    
-
    
-
-    
 })
 
+//creating end point for new collections
 
+app.get('/newcollections',async(req,res)=>{
+    let products=await Product.find({});
+    let newcollection=products.slice(1).slice(-8);
+    console.log("new collections fetched");
+   res.send(newcollection);
+})
+
+// end points for getting poular products
+
+app.get('/popularinwomen',async(req,res)=>{
+    let products=await Product.find({category:"women"});
+    let popular_in_women=products.slice(0,4);
+   res.send(popular_in_women);
+});
+
+//creating middleware to fetch user of a item of cart
+
+const fetchuser=async(req,res,next)=>{
+    const token=req.header('auth-token');
+    if(!token)
+    {
+res.statuse(401).send({"errors":"please authenticate using valid token"});
+    }
+    else
+    {
+        try{
+            const data=jwt.verify(token,'secret_ecom');
+            req.user=data.user;
+            next();
+        }
+        catch(error)
+        {
+            res.status(401).send({errors:"please authenticate using a valid token"});
+        }
+    }
+
+}
+
+app.post('/addtocart',fetchuser,async(req,res)=>{
+   
+    let userData=await User.findOne({_id:req.user.id});
+    
+    userData.cartData[req.body.itemId]+=1;
+    const updated_user=await User.findByIdAndUpdate({_id:req.user.id},{cartData:userData?.cartData});
+    console.log(updated_user,"USER")
+    res.send("Added");
+    // console.log("hidfjnsdfjdslkfnsdfjoij");
+});
+app.post('/removefromcart',fetchuser,async(req,res)=>{
+   
+    let userData=await User.findOne({_id:req.user.id});
+    if(userData.cartData[req.body.itemId]>0)
+    userData.cartData[req.body.itemId]-=1;
+    const updated_user=await User.findByIdAndUpdate({_id:req.user.id},{cartData:userData?.cartData});
+    console.log(updated_user,"USER")
+    res.send("Removed");
+    // console.log("hidfjnsdfjdslkfnsdfjoij");
+});
+
+//creating for maintaing cart icon counting of cartitems
+app.post('/getcart',fetchuser,async(req,res)=>{
+    console.log("get Cart called");
+    let userData=await User.findOne({_id:req.user.id});
+    res.json(userData.cartData);
+})
 
 
 
